@@ -415,6 +415,19 @@ window.showSettings = function() {
 };
 
 if (isLogin) { loadFromCloud(function() { renderAdmin(); }); } else { renderLogin(); }
+
+// 自动从云端加载数据
+if (typeof loadFromCloud === "function") {
+  loadFromCloud(function(cloudData) {
+    if (cloudData && cloudData.registrations) {
+      cloudData.registrations.forEach(function(reg) {
+        var exists = DB.registrations.some(function(r) { return r.id === reg.id; });
+        if (!exists) DB.registrations.push(reg);
+      });
+    }
+    if (typeof render === "function") render();
+  });
+}
 </script>
 </body>
 </html>
