@@ -811,6 +811,38 @@ initSampleData();
 
       loadAnnouncements();      renderVillages()
       loadCloudData();
+
+
+      // ===== 从云端同步当前用户的角色 =====
+      if (typeof CloudDB !== 'undefined' && CloudDB.loadFromPublic && currentUser) {
+        CloudDB.loadFromPublic().then(function() {
+          if (typeof cloudData !== 'undefined') {
+            var accounts = cloudData.accounts || [];
+            var regs = cloudData.registrations || [];
+            var myInfo = null;
+            for (var ai = 0; ai < accounts.length; ai++) {
+              if (accounts[ai].phone === currentUser.phone || accounts[ai].id === currentUser.id) { myInfo = accounts[ai]; break; }
+            }
+            if (!myInfo) {
+              for (var ri = 0; ri < regs.length; ri++) {
+                if ((regs[ri].phone === currentUser.phone || regs[ri].account === currentUser.account) && regs[ri].status === '已通过') {
+                  myInfo = { role: regs[ri].role }; break;
+                }
+              }
+            }
+            if (myInfo && myInfo.role) {
+              var roleNameMap = {'村主任':'township','村民':'villager','游客':'tourist','超市老板':'market','建筑公司':'construction','建筑园林设计师':'landscape','园林设计师':'landscape','乡村教师':'teacher','大学生':'student','律师':'lawyer','货运司机':'truck','顺风车':'carpool','按摩技师':'massage'};
+              var newRole = roleNameMap[myInfo.role] || myInfo.role;
+              if (currentUser.currentRole !== newRole) {
+                console.log('[角色同步] 更新角色:', currentUser.currentRole, '->', newRole);
+                currentUser = Storage.get('user', null) || currentUser;
+                currentUser.currentRole = newRole;
+                Storage.set('user', currentUser);
+              }
+            }
+          }
+        }).catch(function(){});
+      }
 }
 
     function renderBanner() {
